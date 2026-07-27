@@ -1,16 +1,13 @@
 # urban8k-ctransformer
 
-CNN backbone + Transformer encoder for UrbanSound8K classification. The LSTM of
-the previous CRNN project is replaced by a `torch.nn.TransformerEncoder`; the
-CNN backbone is preserved and a masked mean-pooling head produces logits over
-the 10 UrbanSound8K classes.
+CNN backbone + Transformer encoder for UrbanSound8K audio classification. The LSTM from a previous CRNN project is replaced by a `torch.nn.TransformerEncoder`; the CNN backbone is preserved, and a masked mean-pooling head produces logits over the 10 UrbanSound8K classes.
 
-## Tensor contract
+## Architecture
 
 ```text
-log-Mel spectrogram          (B, 1, M, T)
+log-Mel spectrogram          (B, 1, 128, T)
 CNN backbone                 (B, 32, 16, T)
-reorder temporal             (B, T, 512)   # 32 × 16
+reorder temporal             (B, T, 512)    # 32 × 16
 input projection             (B, T, 256)
 positional encoding          (B, T, 256)
 TransformerEncoder (2 layers)(B, T, 256)
@@ -18,174 +15,85 @@ masked mean pooling          (B, 256)
 linear head                  (B, 10)
 ```
 
-`T` is **not** fixed: the model accepts variable-length sequences. When a batch
-contains padding, the model receives a `src_key_padding_mask` (True = padding)
-and the mean pooling ignores padded frames.
+`T` is variable; padded frames are ignored via `src_key_padding_mask` and excluded from the mean pool.
 
-## Repository layout
+## Results
 
-```text
-urban8k-ctransformer/
-├── pyproject.toml          # dependencies, ruff, mypy, pytest config
-├── Makefile                # primary command surface
-├── README.md
-├── configs/
-│   ├── base.yaml           # CPU-friendly defaults
-│   └── h200.yaml           # NVIDIA H200 setup
-├── scripts/
-│   ├── prepare_data.py     # build metadata + train-set normalization stats
-│   ├── train.py            # train one run
-│   └── evaluate.py         # evaluate a run on the test fold
-├── src/urban8k_ctransformer/
-│   ├── config.py           # typed YAML configuration
-│   ├── data/               # dataset, features, collate, splits
-│   ├── models/             # CNN backbone, positional encoding, classifier
-│   ├── training/           # engine, metrics, checkpointing (RunManager)
-│   └── utils/              # seed, device, logging
-├── tests/
-│   ├── unit/               # positional encoding, shapes, masked pooling
-│   └── smoke/              # forward/backward, end-to-end pipeline
-├── data/                   # NOT in git (raw + processed)
-└── artifacts/runs/         # NOT in git (one folder per run)
-```
+Run: `ctransformer_seed42` (seed 42, NVIDIA H200, CUDA 12.8, torch 2.9.1+cu128).
 
-## Install
+Trained 18 epochs (cancelled manually; best val macro-F1 at epoch 13). Evaluated on the held-out test fold (fold 10, 837 samples):
+
+| Metric        | Value  |
+|---------------|--------|
+| Test accuracy | 0.749  |
+| Test macro-F1 | 0.763  |
+
+Per-class F1 (selected):
+
+| Class              | F1    |
+|--------------------|-------|
+| gun_shot           | 0.952 |
+| jackhammer         | 0.904 |
+| car_horn           | 0.857 |
+| drilling           | 0.842 |
+| street_music       | 0.771 |
+| dog_bark           | 0.731 |
+| engine_idling      | 0.714 |
+| air_conditioner    | 0.714 |
+| children_playing   | 0.659 |
+| siren              | 0.481 |
+
+Full results and logs:
+
+- [`summary.json`](artifacts/runs/ctransformer_seed42/summary.json) — test metrics + per-class classification report
+- [`metrics.jsonl`](artifacts/runs/ctransformer_seed42/metrics.jsonl) — one line per epoch (train/val loss, accuracy, macro-F1, LR, time, VRAM)
+- [`run.log`](artifacts/runs/ctransformer_seed42/run.log) — full training + evaluation stdout/stderr
+- [`config.yaml`](artifacts/runs/ctransformer_seed42/config.yaml) — resolved configuration
+- [`metadata.json`](artifacts/runs/ctransformer_seed42/metadata.json) — environment (host, torch, CUDA, GPU, seed)
+- [`figures/learning_curves.png`](artifacts/runs/ctransformer_seed42/figures/learning_curves.png) — loss + val macro-F1 per epoch
+- [`figures/confusion_matrix.png`](artifacts/runs/ctransformer_seed42/figures/confusion_matrix.png) — 10×10 confusion matrix
+- [`figures/confusion_matrix.csv`](artifacts/runs/ctransformer_seed42/figures/confusion_matrix.csv) — raw confusion matrix
+
+## Splits
+
+Following the official UrbanSound8K folds:
+
+| Split | Folds |
+|-------|-------|
+| train | 1–8   |
+| val   | 9     |
+| test  | 10    |
+
+The test fold is never touched until `evaluate.py`.
+
+## Commands
 
 ```bash
-make setup    # uv sync --group dev
+make setup                                                 # install deps
+make all                                                   # lint + typecheck + tests (no GPU/data needed)
+make data   CONFIG=configs/h200.yaml                       # extract WAVs + compute normalization stats
+make train  CONFIG=configs/h200.yaml RUN_ID=ctransformer_seed42
+make evaluate CONFIG=configs/h200.yaml RUN_ID=ctransformer_seed42
 ```
 
-PyTorch is installed via `uv sync` using the project's `pyproject.toml`. On the
-H200 server, verify the CUDA driver first and install a CUDA-compatible wheel
-set if the default does not match:
-
-```bash
-nvidia-smi
-uv run python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-```
-
-Record these outputs in the run's `metadata.json` automatically.
+`make train` never downloads data implicitly. Each run is self-contained under `artifacts/runs/<run_id>/` with config, metadata, per-epoch metrics, checkpoints, figures, and a full `run.log`. Runs cannot be overwritten accidentally; use `--resume` to continue.
 
 ## Dataset
 
-Place UrbanSound8K under `data/raw/UrbanSound8K/` so that:
+Place UrbanSound8K under `data/raw/UrbanSound8K/`:
 
 ```text
 data/raw/UrbanSound8K/
 ├── UrbanSound8K.csv
 └── audio/
-    ├── fold1/...
-    └── fold10/...
+    ├── fold1/ ...
+    └── fold10/ ...
 ```
 
-`data/` and `artifacts/` are git-ignored.
-
-## Splits
-
-Following the official folds:
-
-| Split | Folds     |
-|-------|-----------|
-| train | 1–8       |
-| val   | 9         |
-| test  | 10        |
-
-The test fold is **never** touched until `evaluate.py`.
-
-## Commands (Makefile)
+Download from HuggingFace (`danavery/urbansound8K` — audio is stored inside parquet shards, `prepare_data.py` extracts them automatically):
 
 ```bash
-make all                                            # lint + typecheck + unit + smoke (no GPU, no data)
-make data   CONFIG=configs/h200.yaml                # build metadata + normalization stats
-make train  CONFIG=configs/h200.yaml                # auto run-id
-make train  CONFIG=configs/h200.yaml RUN_ID=ctransformer_seed42
-make evaluate CONFIG=configs/h200.yaml RUN_ID=ctransformer_seed42
+huggingface-cli download danavery/urbansound8K --repo-type dataset --local-dir data/raw/UrbanSound8K
 ```
 
-`make train` never prepares or downloads data implicitly. `make all` runs on a
-laptop without GPU or dataset.
-
-## Run artifacts
-
-Each training run produces a self-contained folder:
-
-```text
-artifacts/runs/<run_id>/
-├── config.yaml             # resolved configuration
-├── metadata.json           # UTC date, hostname, git sha, Python, Torch, CUDA, GPU, seed
-├── metrics.jsonl           # one JSON line per epoch
-├── summary.json            # best epoch + final test metrics
-├── checkpoints/
-│   ├── best.pt             # best val_macro_f1
-│   └── last.pt             # last epoch (for --resume)
-└── figures/
-    ├── learning_curves.png
-    └── confusion_matrix.png (+ .csv)
-```
-
-A run **cannot be overwritten** by accident: re-running with the same `RUN_ID`
-fails unless `--resume` is passed. `--resume <run_id>` loads `last.pt` and
-continues logging into the same run folder.
-
-## Configuration
-
-All hyperparameters live in `configs/*.yaml` and are loaded into typed
-dataclasses in `src/urban8k_ctransformer/config.py`. Validation at load time
-enforces `d_model % nhead == 0`, `num_classes > 1`, and the CNN contract
-`cnn_channels * cnn_frequency_bins == input_dim`.
-
-Key fields (`configs/h200.yaml`):
-
-| Section | Field              | Value |
-|---------|--------------------|-------|
-| data    | sample_rate        | 22050 |
-| data    | n_mels             | 128   |
-| data    | max_seconds        | 4.0   |
-| model   | d_model / nhead    | 256 / 8 |
-| model   | num_layers         | 2     |
-| model   | dim_feedforward    | 512   |
-| model   | dropout            | 0.1   |
-| model   | num_classes        | 10    |
-| model   | max_len            | 2048  |
-| train   | batch_size         | 128   |
-| train   | epochs             | 50    |
-| train   | learning_rate      | 3e-4  |
-| train   | weight_decay       | 1e-4  |
-| train   | amp                | true  |
-| train   | gradient_clip_norm | 1.0   |
-| train   | early_stopping_patience | 10 |
-| train   | selection_metric   | val_macro_f1 |
-
-## Testing
-
-```bash
-make test     # unit tests: shapes, positional encoding, masked pooling
-make smoke    # CPU smoke tests with synthetic tensors
-```
-
-Smoke tests do not require UrbanSound8K or a GPU and run in under a minute.
-
-## Architecture notes
-
-- The TransformerEncoder is the correct choice because this task **encodes and
-  classifies an existing sequence**; it does not generate audio or tokens
-  autoregressively.
-- Self-attention has no implicit temporal order. The sinusoidal positional
-  encoding gives the encoder the position of each frame so it can distinguish
-  an event at the start of a clip from one at the end.
-- Masked mean pooling summarizes all valid frames into a fixed-size vector
-  before the linear head, ignoring padded positions.
-- The CNN backbone is preserved from the previous CRNN project; its output
-  contract `(B, 32, 16, T)` is checked at forward time against `input_dim=512`.
-
-## Reproducibility checklist
-
-- [x] Model contains a CNN and `nn.TransformerEncoder`; no LSTM/GRU.
-- [x] Path `(B, 32, 16, T) → (B, T, 512) → (B, T, 256)` is tested.
-- [x] Positional encoding + `src_key_padding_mask` for variable lengths.
-- [x] Masked temporal pooling; final output `(B, 10)`.
-- [x] Split, seed, optimizer, epochs, device and config are recorded.
-- [x] Test reports accuracy, macro-F1, confusion matrix and per-class report.
-- [x] Each run is self-contained with config, metadata, metrics, checkpoints, figures.
-- [x] Existing runs cannot be overwritten; explicit `--resume` required.
-- [x] `make all` passes without GPU or dataset.
+`data/` and `artifacts/` are git-ignored (except committed results referenced above).
