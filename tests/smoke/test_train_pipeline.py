@@ -85,6 +85,9 @@ def test_train_pipeline(tmp_path: Path) -> None:
     criterion = nn.CrossEntropyLoss()
 
     run = RunManager(artifacts_root=tmp_path / "runs", run_id="smoke")
+    # Attach file logging and verify run.log receives content.
+    run.attach_file_logger("urban8k.smoke")
+    print("smoke test marker line")  # noqa: T201 - should be tee'd to run.log
     run.write_config(cfg)
     run.write_metadata(cfg)
 
@@ -136,6 +139,11 @@ def test_train_pipeline(tmp_path: Path) -> None:
     assert (run.run_dir / "metadata.json").exists()
     assert (run.run_dir / "metrics.jsonl").exists()
     assert (run.ckpt_dir / "best.pt").exists()
+    # run.log was created and captured stdout (the marker line).
+    log_path = run.run_dir / "run.log"
+    assert log_path.exists()
+    log_text = log_path.read_text(encoding="utf-8")
+    assert "smoke test marker line" in log_text
 
     # Reload checkpoint
     ckpt = run.load_checkpoint(which="best")

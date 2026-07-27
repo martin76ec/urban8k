@@ -7,6 +7,7 @@ import platform
 import shutil
 import sys
 from datetime import UTC, datetime
+from logging import Logger
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ import torch
 import yaml
 
 from ..config import Config, config_to_dict
+from ..utils.logging import attach_file_log, get_logger
 
 JSONValue = Any
 
@@ -27,6 +29,7 @@ class RunManager:
             config.yaml
             metadata.json
             metrics.jsonl
+            run.log             # full stdout/stderr capture
             summary.json
             checkpoints/best.pt
             checkpoints/last.pt
@@ -48,6 +51,7 @@ class RunManager:
         self.summary_path = self.run_dir / "summary.json"
         self.config_path = self.run_dir / "config.yaml"
         self.metadata_path = self.run_dir / "metadata.json"
+        self.log_path = self.run_dir / "run.log"
 
         if self.run_dir.exists() and not resume:
             raise RuntimeError(
@@ -56,11 +60,23 @@ class RunManager:
             )
         self.ckpt_dir.mkdir(parents=True, exist_ok=True)
         self.figures_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure the log file exists (append mode on resume, fresh on new run).
+        self.log_path.touch(exist_ok=True)
 
     @staticmethod
     def _default_run_id() -> str:
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         return ts
+
+    def attach_file_logger(self, name: str = "urban8k") -> Logger:
+        """Attach a file handler for this run to the named logger.
+
+        Call once at the start of train/evaluate so every subsequent
+        ``logger.info``/``logger.warning`` call is mirrored to ``run.log``.
+        Also tees stdout/stderr into the same file so tqdm output is captured.
+        """
+        attach_file_log(self.log_path)
+        return get_logger(name, log_file=self.log_path)
 
     def write_config(self, cfg: Config) -> None:
         with self.config_path.open("w", encoding="utf-8") as f:

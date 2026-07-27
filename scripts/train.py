@@ -44,9 +44,12 @@ def main() -> int:
     cfg = load_config(args.config)
     seed_everything(cfg.seed)
     device = resolve_device(cfg.device)
-    _logger.info("Using device: %s", device)
 
     run = RunManager(run_id=args.run_id, resume=args.resume)
+    # Attach file logging (also tees stdout/stderr into run.log).
+    global _logger
+    _logger = run.attach_file_logger("urban8k.train")
+    _logger.info("Using device: %s", device)
     run.write_config(cfg)
     run.write_metadata(cfg)
     _logger.info("Run directory: %s", run.run_dir)

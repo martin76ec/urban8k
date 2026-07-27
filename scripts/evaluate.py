@@ -109,6 +109,9 @@ def main() -> int:
     device = resolve_device(cfg.device)
 
     run = RunManager(run_id=args.run_id, resume=True)
+    # Attach file logging (also tees stdout/stderr into run.log).
+    global _logger
+    _logger = run.attach_file_logger("urban8k.evaluate")
     ckpt = run.load_checkpoint(which=args.checkpoint)
     model = CTransformerClassifier(cfg.model).to(device)
     model.load_state_dict(ckpt["model_state_dict"])
