@@ -1,4 +1,4 @@
-"""UrbanSound8K dataset with on-the-fly log-Mel extraction."""
+"""UrbanSound8K dataset with on-the-fly log-Mel extraction (soundfile backend)."""
 
 from __future__ import annotations
 
@@ -6,11 +6,10 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-import torchaudio
 from torch.utils.data import Dataset
 
 from ..config import DataConfig
-from .features import extract_log_mel
+from .features import extract_log_mel, load_audio, resample_linear
 
 
 class UrbanSound8KDataset(Dataset[tuple[torch.Tensor, int, int]]):
@@ -45,15 +44,10 @@ class UrbanSound8KDataset(Dataset[tuple[torch.Tensor, int, int]]):
 
     def _load_audio(self, fold: int, name: str) -> torch.Tensor:
         audio_path = self.root / "audio" / f"fold{fold}" / name
-        waveform, sr = torchaudio.load(str(audio_path))
-        # to mono
-        if waveform.shape[0] > 1:
-            waveform = waveform.mean(dim=0, keepdim=True)
-        # resample
+        waveform, sr = load_audio(str(audio_path))
         if sr != self.cfg.sample_rate:
-            resampler = torchaudio.transforms.Resample(sr, self.cfg.sample_rate)
-            waveform = resampler(waveform)
-        out: torch.Tensor = waveform.squeeze(0)
+            waveform = resample_linear(waveform, sr, self.cfg.sample_rate)
+        out: torch.Tensor = waveform
         return out
 
     def _fix_length(self, waveform: torch.Tensor) -> torch.Tensor:
