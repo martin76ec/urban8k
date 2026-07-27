@@ -1228,6 +1228,17 @@ wheels = [
 ]
 
 [[package]]
+name = "torchcodec"
+version = "0.11.1+cu128"
+source = { registry = "https://download.pytorch.org/whl/cu128" }
+wheels = [
+    { url = "https://download.pytorch.org/whl/cu128/torchcodec-0.11.1%2Bcu128-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:1093ba49ce4898b182b2a782372123a50e3e497aec19985dbd430bd28607f357", upload-time = "2026-04-14T18:06:03Z" },
+    { url = "https://download.pytorch.org/whl/cu128/torchcodec-0.11.1%2Bcu128-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:178c05770b6dd13cdbd3c52d6eb85240bc3cdf30173a7cd20015a52621c6d962", upload-time = "2026-04-14T18:06:03Z" },
+    { url = "https://download.pytorch.org/whl/cu128/torchcodec-0.11.1%2Bcu128-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:2f1efd182a3728d3a858382f973afabd144f66bfb5c1d5a72c504692cf73a65b", upload-time = "2026-04-14T18:06:03Z" },
+    { url = "https://download.pytorch.org/whl/cu128/torchcodec-0.11.1%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:74d692c90a5b0fbb71a6d100b792a19b0b4731c2aeb81b52cd523eb634c0c80c", upload-time = "2026-04-14T18:06:03Z" },
+]
+
+[[package]]
 name = "tqdm"
 version = "4.69.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1294,6 +1305,7 @@ dependencies = [
     { name = "torchaudio", version = "2.9.1", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
     { name = "torchaudio", version = "2.9.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux'" },
     { name = "torchaudio", version = "2.9.1+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
+    { name = "torchcodec", marker = "sys_platform == 'linux'" },
     { name = "tqdm" },
 ]
 
@@ -1319,6 +1331,7 @@ requires-dist = [
     { name = "torch", marker = "sys_platform == 'linux'", specifier = ">=2.9,<2.10", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchaudio", marker = "sys_platform != 'linux'", specifier = ">=2.9,<2.10" },
     { name = "torchaudio", marker = "sys_platform == 'linux'", specifier = ">=2.9,<2.10", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchcodec", marker = "sys_platform == 'linux'", specifier = ">=0.9,<0.12", index = "https://download.pytorch.org/whl/cu128" },
     { name = "tqdm" },
 ]
 
