@@ -1,0 +1,81 @@
+{
+  "checkpoint_used": "best",
+  "n_test_samples": 837,
+  "test_accuracy": 0.7491039426523297,
+  "test_classification_report": {
+    "accuracy": 0.7491039426523297,
+    "air_conditioner": {
+      "f1-score": 0.7135135135135136,
+      "precision": 0.7764705882352941,
+      "recall": 0.66,
+      "support": 100.0
+    },
+    "car_horn": {
+      "f1-score": 0.8571428571428571,
+      "precision": 0.8108108108108109,
+      "recall": 0.9090909090909091,
+      "support": 33.0
+    },
+    "children_playing": {
+      "f1-score": 0.6586345381526104,
+      "precision": 0.5503355704697986,
+      "recall": 0.82,
+      "support": 100.0
+    },
+    "dog_bark": {
+      "f1-score": 0.7314285714285714,
+      "precision": 0.8533333333333334,
+      "recall": 0.64,
+      "support": 100.0
+    },
+    "drilling": {
+      "f1-score": 0.8421052631578947,
+      "precision": 0.8888888888888888,
+      "recall": 0.8,
+      "support": 100.0
+    },
+    "engine_idling": {
+      "f1-score": 0.7142857142857143,
+      "precision": 0.6796116504854369,
+      "recall": 0.7526881720430108,
+      "support": 93.0
+    },
+    "gun_shot": {
+      "f1-score": 0.9523809523809523,
+      "precision": 0.967741935483871,
+      "recall": 0.9375,
+      "support": 32.0
+    },
+    "jackhammer": {
+      "f1-score": 0.9038461538461539,
+      "precision": 0.8392857142857143,
+      "recall": 0.9791666666666666,
+      "support": 96.0
+    },
+    "macro avg": {
+      "f1-score": 0.7625272278744137,
+      "precision": 0.77588594443741,
+      "recall": 0.7673987916475286,
+      "support": 837.0
+    },
+    "siren": {
+      "f1-score": 0.48120300751879697,
+      "precision": 0.64,
+      "recall": 0.3855421686746988,
+      "support": 83.0
+    },
+    "street_music": {
+      "f1-score": 0.7707317073170732,
+      "precision": 0.7523809523809524,
+      "recall": 0.79,
+      "support": 100.0
+    },
+    "weighted avg": {
+      "f1-score": 0.7449712257356432,
+      "precision": 0.7607655245993328,
+      "recall": 0.7491039426523297,
+      "support": 837.0
+    }
+  },
+  "test_macro_f1": 0.7625272278744137
+}

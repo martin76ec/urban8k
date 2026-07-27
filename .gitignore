@@ -6,10 +6,24 @@ __pycache__/
 dist/
 build/
 
-# Data & artifacts (not in git)
+# Data & generated artifacts
 data/raw/
 data/processed/
-artifacts/
+artifacts/*
+!artifacts/runs/
+artifacts/runs/*
+!artifacts/runs/ctransformer_seed42/
+artifacts/runs/ctransformer_seed42/*
+!artifacts/runs/ctransformer_seed42/config.yaml
+!artifacts/runs/ctransformer_seed42/metadata.json
+!artifacts/runs/ctransformer_seed42/metrics.jsonl
+!artifacts/runs/ctransformer_seed42/run.log
+!artifacts/runs/ctransformer_seed42/summary.json
+!artifacts/runs/ctransformer_seed42/figures/
+artifacts/runs/ctransformer_seed42/figures/*
+!artifacts/runs/ctransformer_seed42/figures/confusion_matrix.csv
+!artifacts/runs/ctransformer_seed42/figures/confusion_matrix.png
+!artifacts/runs/ctransformer_seed42/figures/learning_curves.png
 
 # Caches
 .pytest_cache/

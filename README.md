@@ -17,6 +17,14 @@ linear head                  (B, 10)
 
 `T` is variable; padded frames are ignored via `src_key_padding_mask` and excluded from the mean pool.
 
+The CNN output is reordered from `(B, 32, 16, T)` to the temporal sequence `(B, T, 512)`, then projected to `d_model=256`. The encoder uses 2 layers, 8 attention heads, a 512-dimensional feed-forward block, dropout 0.1, `batch_first=True`, and only `torch.nn` components. See the [CNN backbone](src/urban8k_ctransformer/models/cnn_backbone.py) and [CTransformer forward pass](src/urban8k_ctransformer/models/ctransformer.py).
+
+Self-attention does not encode frame order by itself, so a deterministic [sinusoidal positional encoding](src/urban8k_ctransformer/models/positional_encoding.py) is added before the encoder. Masked mean pooling gives every valid frame equal weight, ignores batch padding, and produces the fixed `(B, 256)` vector required by the 10-class linear head.
+
+## Training setup
+
+Official folds 1–8 are used for training, fold 9 for validation/model selection, and fold 10 only for final testing. Training uses AdamW (`lr=3e-4`, weight decay `1e-4`), batch size 128, mixed precision, gradient clipping at 1.0, a 50-epoch cap, and early stopping after 10 epochs without a better validation macro-F1. The experiment ran on an NVIDIA H200 with CUDA 12.8; all values are preserved in the [resolved configuration](artifacts/runs/ctransformer_seed42/config.yaml) and [environment metadata](artifacts/runs/ctransformer_seed42/metadata.json).
+
 ## Results
 
 Run: `ctransformer_seed42` (seed 42, NVIDIA H200, CUDA 12.8, torch 2.9.1+cu128).
@@ -96,4 +104,4 @@ Download from HuggingFace (`danavery/urbansound8K` — audio is stored inside pa
 huggingface-cli download danavery/urbansound8K --repo-type dataset --local-dir data/raw/UrbanSound8K
 ```
 
-`data/` and `artifacts/` are git-ignored (except committed results referenced above).
+Raw data, generated runs, and checkpoints are ignored. The lightweight `ctransformer_seed42` evaluation evidence referenced above is committed for reproducibility.
