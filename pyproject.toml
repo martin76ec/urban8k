@@ -4,8 +4,9 @@ version = "0.1.0"
 description = "CNN + Transformer encoder for UrbanSound8K classification"
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "torch>=2.9",
-    "torchaudio>=2.9",
+    "torch>=2.9,<2.10",
+    "torchaudio>=2.9,<2.10",
+    "soundfile",
     "numpy",
     "pyyaml",
     "scikit-learn",

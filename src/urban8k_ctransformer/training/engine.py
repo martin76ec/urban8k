@@ -38,7 +38,9 @@ def train_one_epoch(
     n_batches = 0
 
     autocast_device = "cuda" if (amp and device.type == "cuda") else "cpu"
-    scaler = torch.amp.GradScaler("cuda", enabled=amp and device.type == "cuda")
+    scaler: torch.cuda.amp.GradScaler = torch.cuda.amp.GradScaler(
+        enabled=amp and device.type == "cuda"
+    )
 
     iterator = tqdm(loader, desc="train", disable=not progress)
     for features, labels, _lengths, padding_mask in iterator:
