@@ -1,0 +1,31 @@
+seed: 42
+device: cpu
+data:
+  root: data/raw/UrbanSound8K
+  sample_rate: 22050
+  n_mels: 128
+  max_seconds: 4.0
+  num_workers: 0
+  persistent_workers: false
+  pin_memory: false
+model:
+  cnn_channels: 32
+  cnn_frequency_bins: 16
+  input_dim: 512
+  d_model: 256
+  nhead: 8
+  num_layers: 2
+  dim_feedforward: 512
+  dropout: 0.1
+  num_classes: 10
+  max_len: 2048
+train:
+  batch_size: 32
+  epochs: 50
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  amp: false
+  compile: false
+  gradient_clip_norm: 1.0
+  early_stopping_patience: 10
+  selection_metric: val_macro_f1
